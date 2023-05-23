@@ -65,16 +65,9 @@ public:
         SimpleVector tmp(other.size_);
         tmp.capacity_ = other.capacity_;
         int i = 0;
-        /*for (const Type elem : std::move(const_cast<SimpleVector&>(other))) {
-            tmp[i] = std::move(const_cast<Type&>(elem));
-            ++i;
-        }*/
         for (auto it = other.begin(); it != other.end(); ++it, ++i) {
             tmp[i] = std::move(const_cast<Type&>(*it));
-            //++i;
         }
-        //std::move(std::make_move_iterator(other.begin()), std::make_move_iterator(other.end()), begin());
-        //swap(tmp);
         std::move(tmp.begin(), tmp.end(), begin());
     }
 
@@ -113,7 +106,6 @@ public:
     SimpleVector& operator=(SimpleVector&& rhs) noexcept {
         if (this != &rhs) {
             elements.swap(rhs.elements);
-            //std::move(rhs.begin(), rhs.end(), begin());
             size_ = rhs.size_;
             capacity_ = rhs.capacity_;
             rhs.Clear();
@@ -125,9 +117,7 @@ public:
     // При нехватке места увеличивает вдвое вместимость вектора
     void PushBack(const Type& item) {
         if (size_ == capacity_) {
-            //size_t old_size = size_;
             size_t new_capacity = capacity_ == 0 ? 1 : capacity_ * 2;
-            //Resize(new_capacity);
             capacity_ = new_capacity;
             ArrayPtr<Type> tmp(new_capacity);
             std::move(begin(), end(), tmp.Get());
@@ -147,8 +137,6 @@ public:
             capacity_ = capacity_ == 0 ? 1 : capacity_ * 2;
         }
         ArrayPtr<Type> new_array(capacity_);
-        //std::copy(std::make_move_iterator(begin()), std::make_move_iterator(end()), new_array.Get());
-        //std::copy_backward(std::make_move_iterator(new_array.Get() + distance), std::make_move_iterator(new_array.Get() + size_), new_array.Get() + size_ + 1);
         std::move(begin(), end(), new_array.Get());
         std::move(new_array.Get() + distance, new_array.Get() + size_, new_array.Get() + distance + 1);
         new_array[distance] = std::move(const_cast<Type&>(value));
@@ -172,9 +160,6 @@ public:
             elements[distance] = std::move(const_cast<Type&>(*it));
             ++distance;
         }
-        /*ArrayPtr<Type> tmp;
-        std::merge(begin(), begin() + distance, begin() + distance + 1, end(), tmp.Get());
-        elements.swap(tmp);*/
         --size_;
         return begin() + result;
     }
@@ -182,14 +167,8 @@ public:
     // Обменивает значение с другим вектором
     void swap(SimpleVector& other) noexcept {
         elements.swap(other.elements);
-        size_t old_size = size_;
-        size_t old_capacity = capacity_;
-
-        size_ = other.size_;
-        capacity_ = other.capacity_;
-
-        other.size_ = old_size;
-        other.capacity_ = old_capacity;
+        std::swap(size_, other.size_);
+        std::swap(capacity_, other.capacity_);
     }
 
     // Возвращает количество элементов в массиве
@@ -238,7 +217,6 @@ public:
             return;
         }
         ArrayPtr<Type> new_array(new_capacity);
-        //std::copy(std::make_move_iterator(begin()), std::make_move_iterator(end()), new_array.Get());
         std::move(begin(), end(), new_array.Get());
         new_array.swap(elements);
         capacity_ = new_capacity;
@@ -251,24 +229,13 @@ public:
             size_ = new_size;
         }
         else if (new_size <= capacity_) {
-            //size_t dist = new_size - size_;
-            //ArrayPtr<Type> tmp(dist);
-            //SimpleVector<Type> tmp(dist);
-            //std::fill(begin() + size_, begin() + new_size, Type{});
-            /*for (size_t i = size_; i < new_size; ++i) {
-                Type value = Type{};
-                elements[i] = std::move(value);
             }*/
             fill_vector(begin() + size_, begin() + new_size);
-            //std::move(tmp.Get(), tmp.Get() + dist, begin() + size_);
-            //std::move(tmp.begin(), tmp.end(), begin() + size_);
             size_ = new_size;
         }
         else {
             ArrayPtr<Type> new_array(new_size);
-            //std::copy(std::make_move_iterator(begin()), std::make_move_iterator(end()), new_array.Get());
             std::move(begin(), end(), new_array.Get());
-            //std::fill(std::make_move_iterator(it), std::make_move_iterator(new_array.Get() + new_size), std::move(Type{}));
             fill_vector(new_array.Get() + size_, new_array.Get() + new_size);
             new_array.swap(elements);
             size_ = new_size;
