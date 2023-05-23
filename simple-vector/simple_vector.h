@@ -34,7 +34,8 @@ public:
     explicit SimpleVector(size_t size) :
         elements(size),
         size_(size),
-        capacity_(size) {
+        capacity_(size) 
+    {
         std::fill(begin(), end(), Type{});
     }
 
@@ -42,7 +43,8 @@ public:
     SimpleVector(size_t size, const Type& value) :
         elements(size),
         size_(size),
-        capacity_(size) {
+        capacity_(size) 
+    {
         ArrayPtr<Type> elements(size);
         size_ = size;
         capacity_ = size;
@@ -53,7 +55,8 @@ public:
     SimpleVector(std::initializer_list<Type> init) :
         elements(init.size()),
         size_(init.size()),
-        capacity_(init.size()) {
+        capacity_(init.size()) 
+    {
         int i = 0;
         for (const Type elem : init) {
             elements[i] = elem;
@@ -80,18 +83,23 @@ public:
     SimpleVector(SimpleVector&& other) noexcept :
         elements(other.size_),
         size_(other.size_),
-        capacity_(other.capacity_) {
+        capacity_(other.capacity_) 
+    {
         std::move(other.begin(), other.end(), begin());
         other.Clear();
     }
 
     // Возвращает ссылку на элемент с индексом index
     Type& operator[](size_t index) noexcept {
+        assert(size_ != 0);
+        assert(index < size_);
         return elements[index];
     }
 
     // Возвращает константную ссылку на элемент с индексом index
     const Type& operator[](size_t index) const noexcept {
+        assert(size_ != 0);
+        assert(index < size_);
         return elements[index];
     }
 
@@ -106,9 +114,8 @@ public:
     SimpleVector& operator=(SimpleVector&& rhs) noexcept {
         if (this != &rhs) {
             elements.swap(rhs.elements);
-            size_ = rhs.size_;
+            size_ = std::exchange(rhs.size_, 0);
             capacity_ = rhs.capacity_;
-            rhs.Clear();
         }
         return *this;
     }
@@ -132,7 +139,8 @@ public:
     // Если перед вставкой значения вектор был заполнен полностью,
     // вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
     Iterator Insert(ConstIterator pos, const Type& value) {
-        size_t distance = pos - begin();
+        assert(std::distance(cbegin(), pos) <= static_cast<int>(size_));
+        int distance = pos - begin();
         if (size_ == capacity_) {
             capacity_ = capacity_ == 0 ? 1 : capacity_ * 2;
         }
@@ -147,15 +155,15 @@ public:
 
     // "Удаляет" последний элемент вектора. Вектор не должен быть пустым
     void PopBack() noexcept {
-        if (!IsEmpty()) {
-            --size_;
-        }
+        assert(!IsEmpty());
+        --size_;
     }
 
     // Удаляет элемент вектора в указанной позиции
     Iterator Erase(ConstIterator pos) {
-        size_t distance = pos - begin();
-        size_t result = distance;
+        assert(std::distance(cbegin(), pos) <= static_cast<int>(size_));
+        int distance = pos - begin();
+        int result = distance;
         for (auto it = pos + 1; it != end(); ++it) {
             elements[distance] = std::move(const_cast<Type&>(*it));
             ++distance;
@@ -183,10 +191,7 @@ public:
 
     // Сообщает, пустой ли массив
     bool IsEmpty() const noexcept {
-        if (size_ != 0) {
-            return false;
-        }
-        return true;
+        return size_ == 0;
     }
 
     // Возвращает константную ссылку на элемент с индексом index
@@ -229,7 +234,7 @@ public:
             size_ = new_size;
         }
         else if (new_size <= capacity_) {
-            }*/
+            }
             fill_vector(begin() + size_, begin() + new_size);
             size_ = new_size;
         }
@@ -293,7 +298,7 @@ private:
 
 template <typename Type>
 inline bool operator==(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-    return std::equal(lhs.begin(), lhs.end(), rhs.begin());
+    return (lhs.GetSize() == rhs.GetSize() && std::equal(lhs.begin(), lhs.end(), rhs.begin()));
 }
 
 template <typename Type>
@@ -308,12 +313,12 @@ inline bool operator<(const SimpleVector<Type>& lhs, const SimpleVector<Type>& r
 
 template <typename Type>
 inline bool operator<=(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-    return lhs < rhs || lhs == rhs;
+    return !(rhs < lhs);
 }
 
 template <typename Type>
 inline bool operator>(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-    return !(lhs <= rhs);
+    return rhs < lhs;
 }
 
 template <typename Type>

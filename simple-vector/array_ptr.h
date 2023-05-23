@@ -25,7 +25,8 @@ public:
     ArrayPtr(const ArrayPtr&) = delete;
 
     ArrayPtr(ArrayPtr&& other) noexcept :
-        raw_ptr_(nullptr) {
+        raw_ptr_(nullptr) 
+    {
         swap(other);
     }
 
